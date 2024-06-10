@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>API_KEY</key>
+	<string>AIzaSyCuHIW4XzWYkbgFJ0-3ZxBOiEJfrC2E9M0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>311228428876</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>solvex.mrmikesstudents.uz</string>
+	<key>PROJECT_ID</key>
+	<string>mr-mikes-students</string>
+	<key>STORAGE_BUCKET</key>
+	<string>mr-mikes-students.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:311228428876:ios:a2cc010880126d3e547ae9</string>
+</dict>
+</plist>
