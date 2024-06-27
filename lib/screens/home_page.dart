@@ -1,15 +1,15 @@
 // ignore_for_file: avoid_unnecessary_containers
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:mr_mikes_students/constantas/const.dart';
 import 'package:mr_mikes_students/model/students_model.dart';
 import 'package:mr_mikes_students/service/students_service.dart';
 
 import '../main.dart';
+import '../model/points_model.dart';
+import 'points_screen/points.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -20,45 +20,58 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   AppService service = AppService();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppConstants.appColor,
-      body: Container(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                Expanded(
-                    flex: 2,
-                    child: Container(
-                      color: AppConstants.appColor,
-                    )),
-                Expanded(
-                    flex: 4,
-                    child: Container(
-                      color: Colors.white,
-                    ))
-              ],
-            ),
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Expanded(
+        backgroundColor: AppConstants.appColor,
+        body: Container(
+          child: Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                      flex: 2,
+                      child: Container(
+                        color: AppConstants.appColor,
+                      )),
+                  Expanded(
+                      flex: 4,
+                      child: Container(
+                        color: Colors.white,
+                      ))
+                ],
+              ),
+              SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(8.0),
                   child: SingleChildScrollView(
-                    child: Positioned(
-                      top: 70,
-                      left: 24,
-                      right: 24,
+                    child: SingleChildScrollView(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const SizedBox(height: 17),
-                          const Text("Mr. Mike's students",
-                              style: TextStyle(
-                                fontSize: 24,
-                                color: Colors.white,
-                              )),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Mr. Mike's students",
+                                  style: TextStyle(
+                                    fontSize: 24,
+                                    color: Colors.white,
+                                  )),
+                              IconButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              PointsTableScreen()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.rule,
+                                      color: Colors.white))
+                            ],
+                          ),
                           const Text(
                             'Ratings',
                             style: TextStyle(
@@ -66,6 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.white,
                             ),
                           ),
+                          searchBox(),
                           const SizedBox(height: 10),
                           buildColumn(),
                         ],
@@ -74,15 +88,52 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          showAddStudentDialog(context);
-        },
-        child: const Icon(Icons.add),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            showAddStudentDialog(context);
+          },
+          child: const Icon(Icons.add),
+        ));
+  }
+
+  TextEditingController _searchController = TextEditingController();
+  GlobalKey<AnimatedListState> listKey = GlobalKey<AnimatedListState>();
+  String _searchQuery = "";
+
+  Widget searchBox() {
+    return Padding(
+      padding: const EdgeInsets.all(12.0),
+      child: Container(
+        padding: const EdgeInsets.only(left: 12.0, right: 12),
+        decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.white)),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            labelText: 'Search by name',
+            labelStyle: const TextStyle(color: Colors.white),
+            border: InputBorder.none,
+            enabledBorder: InputBorder.none,
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.clear, color: Colors.white),
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _searchQuery = "";
+                });
+              },
+            ),
+          ),
+          onChanged: (value) async {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
+        ),
       ),
     );
   }
@@ -90,7 +141,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget buildColumn() {
     return StreamBuilder(
       key: UniqueKey(),
-      stream: service.getStudents(),
+      stream: service.getStudents(_searchQuery),
       builder: (ctx, snapshot) {
         if (snapshot.hasError) {
           return Center(
@@ -115,8 +166,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
         // Assuming data can be cast to StudentsModel
         students.sort((a, b) {
-          double balanceA = a.data().balance;
-          double balanceB = b.data().balance;
+          num balanceA = a.data().balance;
+          num balanceB = b.data().balance;
           return balanceB.compareTo(balanceA);
         });
 
@@ -128,9 +179,8 @@ class _HomeScreenState extends State<HomeScreen> {
             StudentsModel data = students[index].data();
             String id = students[index].id;
 
-            String subtitle = "";
-
-            return _buildStudentItem(id, data, subtitle, index);
+            return _buildStudentItem(
+                id, data, data.studentClass.toString(), index);
           },
         );
       },
@@ -138,25 +188,33 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildStudentItem(
-      String id, StudentsModel data, String subTitle, int index) {
+    String id,
+    StudentsModel data,
+    String subTitle,
+    int index,
+  ) {
     return Slidable(
-      key: const ValueKey(0),
+      key: ValueKey(id),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
-        dismissible: DismissiblePane(onDismissed: () {
-          service.deleteStudent(id);
-        }),
+        dismissible: isMike
+            ? DismissiblePane(onDismissed: () {
+                service.deleteStudent(id);
+              })
+            : null,
         children: [
-          SlidableAction(
-            borderRadius: BorderRadius.circular(12),
-            onPressed: (v) {
-              isMike ? service.deleteStudent(id) : () {};
-            },
-            backgroundColor: const Color(0xFFFE4A49),
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: 'Delete',
-          ),
+          isMike
+              ? SlidableAction(
+                  borderRadius: BorderRadius.circular(12),
+                  onPressed: (v) {
+                    service.deleteStudent(id);
+                  },
+                  backgroundColor: const Color(0xFFFE4A49),
+                  foregroundColor: Colors.white,
+                  icon: Icons.delete,
+                  label: 'Delete',
+                )
+              : const SizedBox(),
         ],
       ),
       child: Card(
@@ -187,10 +245,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? IconButton(
                       icon: const Icon(Icons.remove),
                       onPressed: () {
-                        showDialogStudentBalance(false, context, data, id);
+                        showDialogQuickBalanceUpdate(context, data, id);
+
+                        // showDialogStudentBalance(false, context, data, id);
                       },
                     )
-                  : SizedBox(),
+                  : const SizedBox(),
               Text(
                 data.balance.toString(),
                 style: const TextStyle(fontSize: 22),
@@ -200,15 +260,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       // Plus Button
                       icon: const Icon(Icons.add),
                       onPressed: () {
-                        showDialogStudentBalance(true, context, data, id);
+                        showDialogQuickBalanceUpdate(context, data, id);
+                        // showDialogStudentBalance(true, context, data, id);
                       })
-                  : SizedBox(),
+                  : const SizedBox(),
             ],
           ),
         ),
       ),
     );
   }
+
+  String? selectedAction;
 
   void showDialogStudentBalance(bool isIncrement, BuildContext ctx,
       StudentsModel data, String studentId) {
@@ -257,9 +320,123 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void showDialogQuickBalanceUpdate(
+      BuildContext ctx, StudentsModel data, String studentId) {
+    showDialog(
+      context: ctx,
+      builder: (BuildContext context) {
+        Map<String, int> selectedPointCounts = {};
+        num newBalance = data.balance;
+
+        final combinedPointsData = [...AppConstants.pointsGainedData, ...AppConstants.pointsLostData];
+
+        return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setState) {
+            void updateBalance() {
+              newBalance = data.balance;
+              selectedPointCounts.forEach((name, count) {
+                final actionData = combinedPointsData.firstWhere(
+                  (element) => element.name == name,
+                );
+                newBalance += actionData.points * count;
+              });
+              setState(() {}); // Update the UI to reflect new balance
+            }
+
+            return AlertDialog(
+              title: Column(
+                children: [
+                  Text('Quick Balance Update'),
+                  Text(
+                    'Balance: $newBalance',
+                  ),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: combinedPointsData.map((action) {
+                        selectedPointCounts[action.name] =
+                            selectedPointCounts[action.name] ?? 0;
+                        return Card(
+                          color: action.type == "loss"
+                              ? Colors.redAccent
+                              : Colors.greenAccent,
+                          child: ListTile(
+                            title: Text('${action.name} (${action.points})'),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: Icon(Icons.remove),
+                                  onPressed: () {
+                                    if (selectedPointCounts[action.name]! > 0) {
+                                      selectedPointCounts[action.name] =
+                                          selectedPointCounts[action.name]! - 1;
+                                      updateBalance();
+                                    }
+                                  },
+                                ),
+                                Text(
+                                  selectedPointCounts[action.name].toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: Icon(Icons.add),
+                                  onPressed: () {
+                                    selectedPointCounts[action.name] =
+                                        selectedPointCounts[action.name]! + 1;
+                                    updateBalance();
+                                  },
+                                ),
+                              ],
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
+                ),
+              ),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('CANCEL'),
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+                TextButton(
+                  child: const Text('UPDATE'),
+                  onPressed: () {
+                    StudentsModel updatedData = data.copyWith(
+                      fullName: data.fullName,
+                      balance: newBalance,
+                    );
+
+                    // Assuming service.updateStudent is the method to update the student
+                    service.updateStudent(updatedData, studentId);
+
+                    Navigator.of(context).pop();
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+
   showAddStudentDialog(BuildContext context) {
     final TextEditingController fullNameController = TextEditingController();
     final TextEditingController balanceController = TextEditingController();
+    final TextEditingController studentClassController =
+        TextEditingController();
 
     showDialog(
       context: context,
@@ -269,17 +446,22 @@ class _HomeScreenState extends State<HomeScreen> {
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                // Full Name field
                 TextField(
                   controller: fullNameController,
                   decoration: const InputDecoration(hintText: "Full Name"),
                 ),
-                // Balance field
+                Visibility(
+                  visible: isMike,
+                  child: TextField(
+                    controller: balanceController,
+                    decoration: const InputDecoration(hintText: "Balance"),
+                    keyboardType:
+                        const TextInputType.numberWithOptions(decimal: true),
+                  ),
+                ),
                 TextField(
-                  controller: balanceController,
-                  decoration: const InputDecoration(hintText: "Balance"),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  controller: studentClassController,
+                  decoration: const InputDecoration(hintText: "Class"),
                 ),
               ],
             ),
@@ -294,15 +476,14 @@ class _HomeScreenState extends State<HomeScreen> {
             TextButton(
               child: const Text('ADD'),
               onPressed: () {
-                // Implement your add logic here
-                // Example: Adding the student to a list or database
                 String fullName = fullNameController.text;
-                double balance = double.tryParse(balanceController.text) ??
-                    0.0; // Default to 0 if parsing fails
+                double balance = double.tryParse(balanceController.text) ?? 0.0;
+
                 StudentsModel newStudent = StudentsModel(
                     fullName: fullName,
                     balance: balance,
-                    createdAt: Timestamp.now());
+                    createdAt: Timestamp.now(),
+                    studentClass: studentClassController.text.trim());
 
                 service.addStudent(newStudent);
                 Navigator.of(context).pop(); // Close the dialog

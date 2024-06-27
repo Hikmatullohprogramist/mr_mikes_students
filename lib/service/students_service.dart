@@ -31,9 +31,18 @@ class AppService {
           toFirestore: (snapshot, _) => snapshot.toJson(),
         );
   }
+  Stream<QuerySnapshot> getStudents([String query = ""]) {
+    if (query.isEmpty) {
+      return _studentsRef.snapshots();
+    }
 
-  Stream<QuerySnapshot> getStudents() {
-    return _studentsRef.snapshots();
+    return _studentsRef
+        .orderBy("full_name")
+        .startAt([query]).endAt([query + '\uf8ff']).snapshots();
+  }
+
+  Stream<QuerySnapshot> searchStudent(String query) {
+    return _studentsRef.where("full_name", isEqualTo: query).snapshots();
   }
 
   void addStudent(StudentsModel data) {

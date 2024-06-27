@@ -28,7 +28,7 @@ class StoreModel {
     String? productName,
     num? amount,
     num? price,
-    dynamic? img,
+    dynamic img,
     Timestamp? createdAt,
   }) {
     return StoreModel(

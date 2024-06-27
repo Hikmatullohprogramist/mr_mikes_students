@@ -33,7 +33,7 @@ class _UpdateProductScreenState extends State<UpdateProductScreen> {
   final _priceController = TextEditingController();
   File? _imgUrl;
   String successDownloadImgurl = "";
-
+  String status = "No uploaded";
   @override
   void dispose() {
     _nameController.dispose();
@@ -77,8 +77,32 @@ class _UpdateProductScreenState extends State<UpdateProductScreen> {
 
     try {
       await referenceToUploadImage.putFile(_imgUrl!);
-      successDownloadImgurl = await referenceToUploadImage.getDownloadURL();
+      referenceToUploadImage
+          .putFile(_imgUrl!)
+          .snapshotEvents
+          .listen((taskSnapshot) {
+        setState(() {
+          switch (taskSnapshot.state) {
+            case TaskState.running:
+              status = "Image upload running ...";
+              break;
+            case TaskState.paused:
+              status = "Image upload paused";
+              break;
+            case TaskState.success:
+              status = "Image upload done";
+              break;
+            case TaskState.canceled:
+              status = "Image upload cancelled";
+              break;
+            case TaskState.error:
+              status = "Image upload error";
+              break;
+          }
+        });
+      });
 
+      successDownloadImgurl = await referenceToUploadImage.getDownloadURL();
       print(successDownloadImgurl);
     } catch (e) {
       print(e);
@@ -138,13 +162,11 @@ class _UpdateProductScreenState extends State<UpdateProductScreen> {
                       height: 200,
                     )
                   : Image.network(successDownloadImgurl),
-              // successDownloadImgurl == ""
-              //     ?
-              //     : Image.network(successDownloadImgurl),
               TextButton(
                 onPressed: _pickImage,
                 child: const Text('Pick Image'),
               ),
+              Text(status),
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: _submit,

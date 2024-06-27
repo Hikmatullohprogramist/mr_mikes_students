@@ -9,6 +9,7 @@ import 'package:mr_mikes_students/screens/store_screen/update_page.dart';
 
 import '../../model/store_model.dart';
 import '../../service/students_service.dart';
+import 'info_screen.dart';
 
 class StorePage extends StatefulWidget {
   const StorePage({super.key});
@@ -93,28 +94,21 @@ class _StorePageState extends State<StorePage> {
             SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Expanded(
-                  child: SingleChildScrollView(
-                    child: Positioned(
-                      top: 70,
-                      left: 24,
-                      right: 24,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SizedBox(height: 17),
-                          const Text(
-                            "Mr. Mike's market",
-                            style: TextStyle(
-                              fontSize: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 20),
-                          _buildStoreGrid(),
-                        ],
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 17),
+                      const Text(
+                        "Mr. Mike's market",
+                        style: TextStyle(
+                          fontSize: 24,
+                          color: Colors.white,
+                        ),
                       ),
-                    ),
+                      const SizedBox(height: 20),
+                      _buildStoreGrid(),
+                    ],
                   ),
                 ),
               ),
@@ -147,71 +141,7 @@ class _StorePageState extends State<StorePage> {
                 StoreModel item = products[index].data();
                 String id = products[index].id;
 
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          item.productName,
-                          style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
-                        Container(
-                          height: 120,
-                          margin: item.img == "" ? EdgeInsets.all(20) : null,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            image: DecorationImage(
-                              image: item.img != ""
-                                  ? NetworkImage(item.img) as ImageProvider
-                                  : AssetImage(
-                                      "assets/no-image.png",
-                                    ),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 10),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "${item.price} Coin",
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                item.amount.toString(),
-                                style: const TextStyle(
-                                    fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ]),
-                        isMike
-                            ? Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.edit),
-                                    onPressed: () =>
-                                        openProductUpdateDialog(item, id),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete),
-                                    onPressed: () => _deleteItem(id),
-                                  ),
-                                ],
-                              )
-                            : ElevatedButton(
-                                onPressed: () {},
-                                child: Text('Buy'),
-                              ),
-                      ],
-                    ),
-                  ),
-                );
+                return _buildCard(item, id);
               },
             );
           } else {
@@ -223,5 +153,84 @@ class _StorePageState extends State<StorePage> {
             );
           }
         });
+  }
+
+  _buildCard(StoreModel item, String id) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (context) => ProductInfoScreen(
+              name: item.productName,
+              amount: item.amount,
+              price: item.price,
+              imageUrl: item.img,
+            ),
+          ),
+        );
+      },
+      child: Card(
+        margin: const EdgeInsets.all(8.0),
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                item.productName,
+                style:
+                    const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              Container(
+                height: 120,
+                margin: item.img == "" ? EdgeInsets.all(20) : null,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  image: DecorationImage(
+                    image: item.img != ""
+                        ? NetworkImage(item.img) as ImageProvider
+                        : AssetImage(
+                            "assets/no-image.png",
+                          ),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              SizedBox(height: 10),
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(
+                  "${item.price} Coin",
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                Text(
+                  item.amount.toString(),
+                  style: const TextStyle(
+                      fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ]),
+              isMike
+                  ? Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => openProductUpdateDialog(item, id),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete),
+                          onPressed: () => _deleteItem(id),
+                        ),
+                      ],
+                    )
+                  : ElevatedButton(
+                      onPressed: () {},
+                      child: Text('Buy'),
+                    ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
